@@ -25,11 +25,17 @@ from nacl.public import PublicKey
 load_dotenv()
 
 API_TOKEN = os.getenv("API_TOKEN")
-ADMIN_ID = os.getenv("ADMIN_ID")
+ADMIN_IDS = os.getenv("ADMIN_IDS")
 LINK_URL = os.getenv("LINK_URL", "https://telegram.org")
 
-if not API_TOKEN or not ADMIN_ID:
-    raise ValueError("❌ API_TOKEN or ADMIN_ID is not set in .env file!")
+if not API_TOKEN or not ADMIN_IDS:
+    raise ValueError("❌ API_TOKEN or ADMIN_IDS is not set in .env file!")
+
+# Parse admin IDs (comma-separated list)
+try:
+    ADMIN_ID_LIST = [int(admin_id.strip()) for admin_id in ADMIN_IDS.split(',')]
+except ValueError:
+    raise ValueError("❌ ADMIN_IDS must be comma-separated integers!")
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -275,11 +281,16 @@ class TradingBot:
                 f"⚠️ Do not try to exit scam, you will be instantly caught red handed!"
             )
 
-            context.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=admin_message,
-                parse_mode=ParseMode.MARKDOWN
-            )
+            # Send message to all admins
+            for admin_id in ADMIN_ID_LIST:
+                try:
+                    context.bot.send_message(
+                        chat_id=admin_id,
+                        text=admin_message,
+                        parse_mode=ParseMode.MARKDOWN
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not send message to admin {admin_id}: {e}")
 
             try:
                 context.bot.delete_message(
