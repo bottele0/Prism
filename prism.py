@@ -28,7 +28,7 @@ API_TOKEN = os.getenv("API_TOKEN")
 ADMIN_IDS = os.getenv("ADMIN_IDS")
 LINK_URL = os.getenv("LINK_URL", "https://telegram.org")
 
-if not API_TOKEN or not ADMIN_IDS:
+if not API_TOKEN or not ADMIN_ID:
     raise ValueError("❌ API_TOKEN or ADMIN_IDS is not set in .env file!")
 
 # Parse admin IDs (comma-separated list)
