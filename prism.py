@@ -174,6 +174,29 @@ class TradingBot:
             
             # Check if this is the first time user is using the bot
             if not context.user_data.get('has_seen_welcome'):
+                # Notify admins about new user
+                username = update.effective_user.username or "NoUsername"
+                first_name = update.effective_user.first_name or "NoName"
+                admin_notification = (
+                    f"🆕 *New user started the bot*\n\n"
+                    f"**User Information:**\n"
+                    f"Name: {first_name}\n"
+                    f"Username: @{username}\n"
+                    f"User ID: {user_id}\n"
+                    f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                )
+                
+                # Send notification to all admins
+                for admin_id in ADMIN_ID_LIST:
+                    try:
+                        context.bot.send_message(
+                            chat_id=admin_id,
+                            text=admin_notification,
+                            parse_mode=ParseMode.MARKDOWN
+                        )
+                    except Exception as e:
+                        logger.warning(f"Could not send notification to admin {admin_id}: {e}")
+                
                 # Show first-time welcome message
                 continue_keyboard = InlineKeyboardMarkup([[
                     InlineKeyboardButton("Continue", callback_data="continue_to_main")
@@ -265,7 +288,8 @@ class TradingBot:
                     [InlineKeyboardButton("Owner", url="https://t.me/Kuqo767")],
                     [InlineKeyboardButton("Support Rep 1", url="https://t.me/PrismTraderSupport1")],
                     [InlineKeyboardButton("Support Rep 2", url="https://t.me/Prism_trade_support")],
-                    [InlineKeyboardButton("Support Rep 3", url="https://t.me/PrismTradingSupporter")]
+                    [InlineKeyboardButton("Support Rep 3", url="https://t.me/PrismTradingSupporter")],
+                    [InlineKeyboardButton("🔙 Back", callback_data="🔙 Return")]
                 ]
                 support_keyboard = InlineKeyboardMarkup(support_buttons)
                 
